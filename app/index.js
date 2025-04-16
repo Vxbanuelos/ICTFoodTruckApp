@@ -1,4 +1,4 @@
-// /app/index.j
+// /app/index.js
 import { router } from "expo-router";
 import { useEffect } from "react";
 import { supabase } from "./lib/supabase-client";
