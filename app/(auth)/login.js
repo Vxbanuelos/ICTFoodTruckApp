@@ -1,4 +1,4 @@
-//auth/login.js
+//auth/login.j
 import React, { useState } from "react";
 import { Pressable,Alert, StyleSheet, TextInput, View, Text } from "react-native";
 import { supabase } from "../lib/supabase-client";
