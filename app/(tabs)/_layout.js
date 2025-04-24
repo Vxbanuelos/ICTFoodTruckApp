@@ -1,3 +1,6 @@
+// This file is used to create a tab layout for the app using Expo Router.
+// It imports the necessary components and libraries, including FontAwesome for icons.
+
 import { Tabs } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 

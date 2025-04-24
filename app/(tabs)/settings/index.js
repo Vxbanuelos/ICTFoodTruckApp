@@ -1,8 +1,4 @@
-//index.js
-//settings/index.js
-// This file handles the initial routing logic based on the user's authentication state
-// It checks if a user session exists and redirects accordingly
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import { SafeAreaView, Text, View, Pressable, StyleSheet,ScrollView } from "react-native";
 import { supabase } from "../../lib/supabase-client";
 import { useEffect, useState } from "react";
@@ -24,10 +20,6 @@ export default function SettingsPage() {
     if (error) {
       Alert.alert("Error Signing Out User", error.message);
     }
-    else {
-      Alert.alert("User Signed Out Successfully");
-    } 
-    
     
   }
 

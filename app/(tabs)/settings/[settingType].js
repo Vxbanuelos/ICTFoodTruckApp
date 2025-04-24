@@ -1,3 +1,7 @@
+// This file is used to create a dynamic route in the settings tab
+// It uses the expo-router library to handle navigation and routing
+//app/tabs/settings/[settingType].js
+
 import {Link,Stack,useLocalSearchParams} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet,Text,View } from 'react-native';

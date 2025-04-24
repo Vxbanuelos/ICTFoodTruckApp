@@ -21,6 +21,7 @@ export default function IndexPage() {
         router.replace("/(auth)/login");
       }
     });
+
   }, []);
 
 }
