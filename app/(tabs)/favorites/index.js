@@ -2,11 +2,11 @@ import {Link,Stack} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet,Text,View } from 'react-native';
 
-
+export const options = { headerShown: false }
 export default function Index() {
   return (
     <>
-    <Stack.Screen options={{ headerShown: true, title: "Favorites" }} />
+   
     <View style={styles.container}>
       <Text> Index of Settings</Text>
       <StatusBar style="auto" />  

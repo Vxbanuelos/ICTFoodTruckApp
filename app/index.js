@@ -1,27 +1,63 @@
-// /app/index.js
-import { router } from "expo-router";
-import { useEffect } from "react";
-import { supabase } from "./lib/supabase-client";
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../src/supabase-client';
 
 export default function IndexPage() {
+  const router = useRouter();
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let mounted = true;
+
+    async function init() {
+      // 0️⃣ restore session from AsyncStorage
+      const json = await AsyncStorage.getItem('supabaseSession');
+      if (json) {
+        try {
+          const session = JSON.parse(json);
+          await supabase.auth.setSession(session);
+        } catch (e) {
+          console.warn('⚠️ failed to parse/restore session:', e);
+        }
+      }
+
+      // 1️⃣ ask Supabase for the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
       if (session) {
-        router.replace("/(tabs)/home/");
+        router.replace('/(tabs)/home'); // ✅ corrected path
       } else {
-        console.log("no user");
+        router.replace('/(auth)/login'); // ✅ corrected path
+      }
+    }
+
+    init();
+
+    // 2️⃣ subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      if (session) {
+        router.replace('/(tabs)/home'); // ✅ corrected path
+      } else {
+        router.replace('/(auth)/login'); // ✅ corrected path
       }
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        router.replace("/(tabs)/home/");
-      } else {
-        console.log("no user");
-        router.replace("/(auth)/login");
-      }
-    });
-
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
+  // 3️⃣ show loader while deciding
+  return (
+    <View style={styles.container}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+});

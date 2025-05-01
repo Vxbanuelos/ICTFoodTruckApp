@@ -1,8 +1,10 @@
-// This file is used to create a tab layout for the app using Expo Router.
-// It imports the necessary components and libraries, including FontAwesome for icons.
+//app/(tabs)/_layout.js
 
 import { Tabs } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import React from "react";
+
+
 
 export default function TabsLayout() {
   return (
@@ -11,7 +13,7 @@ export default function TabsLayout() {
         name="home"
         options={{
           tabBarLabel: "Home",
-          title: "Home",
+          
           tabBarIcon: ({ color }) => (
             <FontAwesome
               size={28}
@@ -22,26 +24,28 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="settings"
+
+<Tabs.Screen
+        name="map"
         options={{
-          tabBarLabel: "Settings",
-          title: "Settings",
+          tabBarLabel: "Map",
+          
           tabBarIcon: ({ color }) => (
             <FontAwesome
               size={28}
               style={{ marginBottom: -3 }}
-              name="gear"
+              name="map"
               color={color}
-            />
+        />
           ),
         }}
       />
-      <Tabs.Screen
+
+<Tabs.Screen
         name="favorites"
         options={{
           tabBarLabel: "Favorites",
-          title: "Favorites",
+          
           tabBarIcon: ({ color }) => (
             <FontAwesome
               size={28}
@@ -52,6 +56,28 @@ export default function TabsLayout() {
           ),
         }}
       />
+
+
+      <Tabs.Screen
+        name="settings"
+        options={{
+          tabBarLabel: "Settings",
+          
+          tabBarIcon: ({ color }) => (
+            <FontAwesome
+              size={28}
+              style={{ marginBottom: -3 }}
+              name="gear"
+              color={color}
+            />
+          ),
+        }}
+      />
+     
+     
+
+
     </Tabs>
   );
 }
+

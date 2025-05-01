@@ -1,3 +1,4 @@
+// app/(auth)/login.js
 import React, { useState } from "react";
 import {
   Pressable,
@@ -11,8 +12,9 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import * as SecureStore from "expo-secure-store"; // Import SecureStore
-import { supabase } from "../lib/supabase-client";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// Updated import path for Supabase client
+import { supabase } from "../../src/supabase-client";
 import { useRouter } from "expo-router";
 import { Image } from "react-native";
 
@@ -22,11 +24,17 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Store token and user data in SecureStore
-  const storeSessionData = async (token, userId) => {
-    await SecureStore.setItemAsync("authToken", token); // Save auth token
-    await SecureStore.setItemAsync("userId", userId);     // Save user ID
-  };
+  // Save entire session object to AsyncStorage
+  async function storeSessionData(session) {
+    try {
+      await AsyncStorage.setItem(
+        "supabaseSession",
+        JSON.stringify(session)
+      );
+    } catch (e) {
+      console.warn("Failed to save session to AsyncStorage:", e);
+    }
+  }
 
   async function signInWithEmail() {
     const cleanEmail = email.trim().toLowerCase();
@@ -47,16 +55,19 @@ export default function AuthPage() {
       return;
     }
 
-    // Store session data in SecureStore
-    await storeSessionData(session.access_token, session.user.id);
+    // Persist the session
+    await storeSessionData(session);
 
-    // fetch their profile
+    // Fetch their profile
     const userId = session.user.id;
-    const { data: profileData, error: profileError } = await supabase
+    const {
+      data: profileData,
+      error: profileError,
+    } = await supabase
       .from("profiles")
       .select("username, avatar_url, role")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       Alert.alert("Profile Error", profileError.message);
@@ -64,14 +75,14 @@ export default function AuthPage() {
       return;
     }
 
-    // 1) Profile setup?
-    if (!profileData.username || !profileData.avatar_url) {
-      router.replace("/profile/setup");  // Redirect to profile setup if profile is incomplete
+    // If no profile row yet → send them to setup
+    if (!profileData) {
+      router.replace("/profile/setup");
       setLoading(false);
       return;
     }
 
-    // 2) If owner, check for truck
+    // If owner without a truck → send to add
     if (profileData.role === "owner") {
       const { data: truck, error: truckError } = await supabase
         .from("food_trucks")
@@ -86,14 +97,14 @@ export default function AuthPage() {
       }
 
       if (!truck) {
-        router.replace("/register/truck");
+        router.replace("/register/new");
         setLoading(false);
         return;
       }
     }
 
-    // 3) Otherwise go to home
-    router.replace("/(tabs)/home");
+    // Otherwise go to home
+    router.replace("/home");
     setLoading(false);
   }
 
@@ -101,12 +112,11 @@ export default function AuthPage() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    // Basic email format check
+    // Basic validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
-
     if (cleanPassword.length < 6) {
       Alert.alert("Weak Password", "Password must be at least 6 characters.");
       return;
@@ -116,11 +126,6 @@ export default function AuthPage() {
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
       password: cleanPassword,
-      options: {
-        // Ensure the user is logged in immediately and bypasses email confirmation
-        emailRedirectTo: "exp://127.0.0.1:19000", // Adjust this for your platform
-        shouldConfirm: false,
-      },
     });
 
     if (error) {
@@ -129,30 +134,35 @@ export default function AuthPage() {
       return;
     }
 
-    // Insert a blank profile with default role = "user"
+    // Create a blank profile with default role
     const userId = data.user.id;
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: userId,
-      role: "user",
-    });
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .upsert({
+        id: userId,
+        role: "user",
+      });
 
     if (profileError) {
       console.warn("Failed to create profile:", profileError.message);
       Alert.alert("Profile Setup Error", "Failed to create a profile.");
     } else {
-      Alert.alert("Registration Successful", "You are now signed up and logged in.");
+      Alert.alert("Registration Successful", "You are now signed up!");
     }
     setLoading(false);
 
-    // Store session data in SecureStore
-    await storeSessionData(data.session.access_token, userId);
+    // Persist the session
+    await storeSessionData(data.session);
 
-    // Redirect user to profile setup or home
-    const { data: profileData, error: profileErrorCheck } = await supabase
+    // Check if we need to prompt for setup
+    const {
+      data: profileData,
+      error: profileErrorCheck,
+    } = await supabase
       .from("profiles")
       .select("username, avatar_url, role")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (profileErrorCheck) {
       console.warn("Profile error:", profileErrorCheck.message);
@@ -160,9 +170,9 @@ export default function AuthPage() {
     }
 
     if (!profileData.username || !profileData.avatar_url) {
-      router.replace("/profile/setup");  // If profile isn't set up, prompt for profile setup
+      router.replace("/profile/setup");
     } else {
-      router.replace("/(tabs)/home");  // Otherwise, redirect to the home page
+      router.replace("/home");
     }
   }
 
@@ -222,7 +232,7 @@ export default function AuthPage() {
 
             <Pressable
               disabled={loading}
-              onPress={() => router.replace("/(tabs)/home")}
+              onPress={() => router.replace("/home")}
               style={styles.buttonContainer}
             >
               <Text style={styles.buttonText}>CONTINUE AS GUEST</Text>
