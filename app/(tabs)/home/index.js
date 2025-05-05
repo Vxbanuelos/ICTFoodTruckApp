@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { fetchFoodTrucks } from '../../../src/truckService';
 
+
 export const options = {
   title: 'Food Trucks',
 };

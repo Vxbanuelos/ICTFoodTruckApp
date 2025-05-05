@@ -1,3 +1,5 @@
+//index.js
+// app/(tabs)/map/index.js
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, ActivityIndicator, Alert, Text } from 'react-native';
 import MapView, { Marker, UrlTile, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -64,6 +66,7 @@ export default function MapScreen() {
               coordinate={{ latitude: truck.lat, longitude: truck.lng }}
               title={truck.name}
               description={truck.description}
+              pinColor="#38b6ff"
             />
           ) : null
         )}

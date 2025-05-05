@@ -1,4 +1,4 @@
-// app/(tabs)/register/create.js
+// app/(tabs)/register/new.js
 import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import * as Location from 'expo-location';
 import { Buffer } from 'buffer';
 import { addFoodTruck } from '../../src/truckService';
 import { supabase } from '../../src/supabase-client';
@@ -22,25 +23,23 @@ export default function NewFoodTruckScreen() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [address, setAddress] = useState('');
+  const [coords, setCoords] = useState({ latitude: null, longitude: null });
   const [imageUri, setImageUri] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // 1️⃣ Ask for gallery permissions on mount
+  // Request permissions on mount
   useEffect(() => {
     (async () => {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
-          'Permission required',
-          'Please enable photo access in your settings.'
-        );
+        Alert.alert('Permission required', 'Enable photo access in settings.');
       }
     })();
   }, []);
 
-  // 2️⃣ Launch image picker
+  // Pick image
   const pickImage = async () => {
     const mediaTypes =
       ImagePicker.MediaType?.Images ?? ImagePicker.MediaTypeOptions.Images;
@@ -50,21 +49,68 @@ export default function NewFoodTruckScreen() {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.7,
-        base64: false,
       });
       if (!result.canceled) {
         setImageUri(result.assets[0].uri);
       }
     } catch (e) {
-      console.error('Error launching image picker:', e);
+      console.error(e);
       Alert.alert('Error', 'Could not open image gallery.');
     }
   };
 
-  // 3️⃣ Upload & save
+  // Get current GPS location
+  const useMyLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission denied', 'Cannot get your location.');
+      return;
+    }
+    const { coords: c } = await Location.getCurrentPositionAsync();
+    setCoords({ latitude: c.latitude, longitude: c.longitude });
+    Alert.alert(
+      'Location set',
+      `Lat: ${c.latitude.toFixed(4)}, Lng: ${c.longitude.toFixed(4)}`
+    );
+  };
+
+  // Geocode the entered address
+  const resolveAddress = async () => {
+    if (!address.trim()) {
+      Alert.alert('Enter an address first');
+      return;
+    }
+    try {
+      const resp = await fetch(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          address
+        )}.json?key=${process.env.MAPTILER_KEY}`
+      );
+      const { features } = await resp.json();
+      if (features.length) {
+        const [lng, lat] = features[0].geometry.coordinates;
+        setCoords({ latitude: lat, longitude: lng });
+        Alert.alert(
+          'Address resolved',
+          `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`
+        );
+      } else {
+        Alert.alert('Not found', 'Could not resolve that address.');
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'Failed to geocode address.');
+    }
+  };
+
+  // Save truck
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Validation', 'Truck name is required.');
+      return;
+    }
+    if (!coords.latitude) {
+      Alert.alert('Location required', 'Please set or resolve a location first.');
       return;
     }
     setSaving(true);
@@ -73,14 +119,11 @@ export default function NewFoodTruckScreen() {
     if (imageUri) {
       setUploadingImage(true);
       try {
-        // Read file as base64
         const b64 = await FileSystem.readAsStringAsync(imageUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        // Convert to Uint8Array
         const buf = Buffer.from(b64, 'base64');
         const arr = new Uint8Array(buf.buffer);
-
         const fileName = `${Date.now()}.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('foodtruck-images')
@@ -95,7 +138,7 @@ export default function NewFoodTruckScreen() {
           .getPublicUrl(fileName);
         publicUrl = data.publicUrl;
       } catch (err) {
-        console.error('Image upload error:', err);
+        console.error(err);
         Alert.alert('Image Upload Error', err.message);
         setUploadingImage(false);
         setSaving(false);
@@ -110,12 +153,13 @@ export default function NewFoodTruckScreen() {
         name: name.trim(),
         description: description.trim(),
         image_url: publicUrl,
-        location: null,
+        lat: coords.latitude,
+        lng: coords.longitude,
       });
       router.replace('/home');
     } catch (err) {
-      console.error('Error saving truck:', err);
-      Alert.alert('Error', err.message);
+      console.error(err);
+      Alert.alert('Error saving truck', err.message);
     } finally {
       setSaving(false);
     }
@@ -156,6 +200,26 @@ export default function NewFoodTruckScreen() {
         multiline
         editable={!saving && !uploadingImage}
       />
+
+      <View style={styles.locationContainer}>
+        <Pressable style={styles.locationButton} onPress={useMyLocation}>
+          <Text style={styles.locationButtonText}>
+            {coords.latitude
+              ? `My Location: (${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)})`
+              : 'Use My Location'}
+          </Text>
+        </Pressable>
+        <TextInput
+          style={styles.input}
+          placeholder="Or enter address"
+          value={address}
+          onChangeText={setAddress}
+          editable={!saving}
+        />
+        <Pressable style={styles.resolveButton} onPress={resolveAddress}>
+          <Text style={styles.locationButtonText}>Resolve Address</Text>
+        </Pressable>
+      </View>
 
       <Pressable
         style={[styles.button, (saving || uploadingImage) && { opacity: 0.6 }]}
@@ -206,11 +270,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   textArea: { height: 100, textAlignVertical: 'top' },
+  locationContainer: {
+    marginBottom: 16,
+  },
+  locationButton: {
+    backgroundColor: '#eee',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  resolveButton: {
+    backgroundColor: '#ddd',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  locationButtonText: {
+    textAlign: 'center',
+    color: '#333',
+  },
   button: {
     backgroundColor: '#38b6ff',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 8,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

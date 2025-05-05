@@ -8,31 +8,38 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Pressable,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { supabase } from '../../src/supabase-client';  // adjust path as needed
+import MapView, { Marker, UrlTile } from 'react-native-maps';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
+import Constants from 'expo-constants';
+import { supabase } from '../../src/supabase-client';
+import { insertFavorite, deleteFavorite, isFavorited } from '../../src/favoritesService';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TruckDetail() {
+  const navigation = useNavigation();
   const { id } = useLocalSearchParams();
   const [truck, setTruck] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFav, setIsFav] = useState(false);
+  const maptilerKey = Constants.expoConfig.extra.maptilerKey;
 
+  // Load truck details
   useEffect(() => {
-    const loadTruck = async () => {
+    async function loadTruck() {
       setLoading(true);
       if (!id) {
         Alert.alert('Error', 'No truck selected.');
         setLoading(false);
         return;
       }
-
       try {
         const { data, error } = await supabase
           .from('foodtrucks')
           .select('*')
           .eq('id', id)
           .single();
-
         if (error) throw error;
         setTruck(data);
       } catch (err) {
@@ -41,10 +48,47 @@ export default function TruckDetail() {
       } finally {
         setLoading(false);
       }
-    };
-
+    }
     loadTruck();
   }, [id]);
+
+  // Set header title to truck name once loaded
+  useEffect(() => {
+    if (truck?.name) {
+      navigation.setOptions({ title: truck.name });
+    }
+  }, [truck]);
+
+  // Check favorite status
+  useEffect(() => {
+    async function checkFavorite() {
+      if (!truck) return;
+      try {
+        const fav = await isFavorited(truck.id);
+        setIsFav(fav);
+      } catch (err) {
+        console.error('Error checking favorite:', err);
+      }
+    }
+    checkFavorite();
+  }, [truck]);
+
+  // Toggle favorite
+  const toggleFavorite = async () => {
+    if (!truck) return;
+    try {
+      if (isFav) {
+        await deleteFavorite(truck.id);
+        setIsFav(false);
+      } else {
+        await insertFavorite(truck.id);
+        setIsFav(true);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', err.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -63,31 +107,64 @@ export default function TruckDetail() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {truck.image_url ? (
-        <Image
-          source={{ uri: truck.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-      ) : null}
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {truck.image_url && (
+          <Image
+            source={{ uri: truck.image_url }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        )}
+        <Text style={styles.name}>{truck.name}</Text>
+        <Text style={styles.description}>{truck.description}</Text>
 
-      <Text style={styles.name}>{truck.name}</Text>
-      <Text style={styles.description}>{truck.description}</Text>
-      {/* add more fields like menu, contact, etc. */}
-    </ScrollView>
+        <Pressable onPress={toggleFavorite} style={styles.favButton}>
+          <Ionicons
+            name={isFav ? 'heart' : 'heart-outline'}
+            size={40}
+            color={isFav ? '#38b6ff' : 'gray'}
+          />
+        </Pressable>
+      </ScrollView>
+
+      {truck.lat != null && truck.lng != null ? (
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: truck.lat,
+            longitude: truck.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+          mapType="none"
+        >
+          <UrlTile
+            urlTemplate={`https://api.maptiler.com/tiles/streets/{z}/{x}/{y}.png?key=${maptilerKey}`}
+            maximumZ={19}
+            flipY={false}
+          />
+          <Marker
+            coordinate={{ latitude: truck.lat, longitude: truck.lng }}
+            title={truck.name}
+            pinColor="#38b6ff"
+          />
+        </MapView>
+      ) : (
+        <Text style={styles.noLocation}>Location not available</Text>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  container: { padding: 16 },
-  image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
+  container: { flex: 1 },
+  scrollContent: { padding: 16 },
+  image: { width: '100%', height: 200, borderRadius: 8, marginBottom: 16 },
   name: { fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
   description: { fontSize: 16, marginBottom: 16 },
+  favButton: { alignItems: 'center', marginBottom: 16 },
+  map: { width: '100%', height: 150 },
+  noLocation: { textAlign: 'center', marginVertical: 16, color: '#777' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
