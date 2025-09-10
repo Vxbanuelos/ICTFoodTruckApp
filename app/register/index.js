@@ -1,4 +1,7 @@
 // app/(tabs)/register/index.js
+//this file is the main screen for the food truck registration process. 
+// It fetches a list of food trucks from the server and displays them in a list format. If no trucks are available, it shows a message 
+// indicating that there are no food trucks available. If the data is still loading, it shows a loading indicator.
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, FlatList, StyleSheet } from 'react-native';
 // Import fetchFoodTrucks from the co-located truckService.js

@@ -13,6 +13,8 @@ import {
 import { useRouter } from 'expo-router';
 import { fetchFavoriteTrucks } from '../../../src/favoritesService';
 
+// This screen displays a list of favorite food trucks.
+// It fetches the data from a service and handles loading and error states.
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,7 @@ export default function FavoritesScreen() {
   );
 }
 
+//styles for the FavoritesScreen component
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 16, color: '#555' },

@@ -28,6 +28,8 @@ export default function SettingsScreen() {
     loadProfile();
   }, []);
 
+  // Function to load the user's profile
+  // This function fetches the user's profile from the database and sets it in the state.
   async function loadProfile() {
     setLoading(true);
     const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -48,7 +50,8 @@ export default function SettingsScreen() {
     }
     setLoading(false);
   }
-
+// Function to handle sign out
+  // This function is called when the user clicks the sign out button.
   async function handleSignOut() {
     setLoading(true);
     const { error } = await supabase.auth.signOut();
@@ -60,7 +63,8 @@ export default function SettingsScreen() {
     await AsyncStorage.removeItem("supabaseSession");
     router.replace("/login");
   }
-
+// Function to handle image picking
+  // This function is called when the user clicks the avatar image to change it.
   async function handlePickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -100,7 +104,8 @@ export default function SettingsScreen() {
       setUploading(false);
     }
   }
-
+// Function to handle username save
+  // This function is called when the user clicks the save button after editing their username.
   async function handleSaveUsername() {
     if (!newUsername.trim()) return Alert.alert("Invalid username", "Cannot be empty.");
     setUploading(true);
@@ -127,7 +132,7 @@ export default function SettingsScreen() {
       </View>
     );
   }
-
+// If the profile is not loaded, show a placeholder
   return (
     <View style={styles.container}>
       <Pressable onPress={handlePickImage} disabled={uploading} style={styles.avatarContainer}>

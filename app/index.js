@@ -11,7 +11,7 @@ export default function IndexPage() {
     let mounted = true;
 
     async function init() {
-      // 0️⃣ restore session from AsyncStorage
+      // restore session from AsyncStorage
       const json = await AsyncStorage.getItem('supabaseSession');
       if (json) {
         try {
@@ -22,25 +22,25 @@ export default function IndexPage() {
         }
       }
 
-      // 1️⃣ ask Supabase for the current session
+      // ask Supabase for the current session
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
       if (session) {
-        router.replace('/(tabs)/home'); // ✅ corrected path
+        router.replace('/(tabs)/home'); 
       } else {
-        router.replace('/(auth)/login'); // ✅ corrected path
+        router.replace('/(auth)/login'); 
       }
     }
 
     init();
 
-    // 2️⃣ subscribe to auth changes
+    // subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       if (session) {
-        router.replace('/(tabs)/home'); // ✅ corrected path
+        router.replace('/(tabs)/home');
       } else {
-        router.replace('/(auth)/login'); // ✅ corrected path
+        router.replace('/(auth)/login'); 
       }
     });
 

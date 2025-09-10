@@ -12,6 +12,7 @@ const mapTilerKey = Constants.expoConfig.extra.mapTilerKey;
 const TILE_URL = 
   `https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${mapTilerKey}`;
 
+  
 export default function MapScreen() {
   const [trucks, setTrucks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ export default function MapScreen() {
       </View>
     );
   }
-
+//maptiler
   return (
     <View style={styles.container}>
       <MapView

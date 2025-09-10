@@ -9,10 +9,11 @@ import {
   StyleSheet,
   ActivityIndicator
 } from "react-native";
-// Updated import path for Supabase client
 import { supabase } from "../../../src/supabase-client";
 import { useRouter } from "expo-router";
 
+// This is the setup screen for the user profile
+// It allows the user to set their username after signing in
 export default function Setup() {
   const [username, setUsername] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -89,6 +90,7 @@ export default function Setup() {
     </View>
   );
 }
+//styles for the Setup component
 
 const styles = StyleSheet.create({
   container: {

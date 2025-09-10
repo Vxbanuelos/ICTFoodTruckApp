@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { fetchFoodTrucks } from '../../../src/truckService';
 
-
+// This is the main screen of the app, where all food trucks are listed
 export const options = {
   title: 'Food Trucks',
 };
@@ -42,7 +42,7 @@ export default function HomeScreen() {
       </View>
     );
   }
-
+// If there are no trucks, show a message
   return (
     <View style={styles.container}>
       <FlatList
@@ -73,7 +73,7 @@ export default function HomeScreen() {
     </View>
   );
 }
-
+//
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },

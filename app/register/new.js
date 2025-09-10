@@ -1,4 +1,7 @@
 // app/(tabs)/register/new.js
+// This file is the screen for adding a new food truck. It allows users to pick an image, enter truck details, and save the truck to the database.
+// It uses the Expo ImagePicker for selecting images, and the Expo Location API for getting the user's location.
+// The image is uploaded to Supabase storage, and the truck details are saved in a PostgreSQL database using Supabase.
 import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
@@ -211,13 +214,13 @@ export default function NewFoodTruckScreen() {
         </Pressable>
         <TextInput
           style={styles.input}
-          placeholder="Or enter address"
+          placeholder="Enter address (address, city, state)"
           value={address}
           onChangeText={setAddress}
           editable={!saving}
         />
         <Pressable style={styles.resolveButton} onPress={resolveAddress}>
-          <Text style={styles.locationButtonText}>Resolve Address</Text>
+          <Text style={styles.locationButtonText}>Verify Address</Text>
         </Pressable>
       </View>
 
@@ -235,7 +238,7 @@ export default function NewFoodTruckScreen() {
     </ScrollView>
   );
 }
-
+//styles for the NewFoodTruckScreen component
 const styles = StyleSheet.create({
   container: { padding: 16, backgroundColor: '#fff' },
   heading: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },

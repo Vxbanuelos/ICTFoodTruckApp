@@ -13,11 +13,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// Updated import path for Supabase client
+
 import { supabase } from "../../src/supabase-client";
 import { useRouter } from "expo-router";
 import { Image } from "react-native";
 
+// This is the login screen for a React Native app using Expo and Supabase.
+// It allows users to sign in or sign up with email and password, and also provides a guest login option.
+// The screen includes input fields for email and password, and buttons for signing in, signing up, and continuing as a guest.
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +38,7 @@ export default function AuthPage() {
       console.warn("Failed to save session to AsyncStorage:", e);
     }
   }
-
+// Load session from AsyncStorage
   async function signInWithEmail() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
@@ -81,7 +84,7 @@ export default function AuthPage() {
       setLoading(false);
       return;
     }
-
+    //not working yet
     // If owner without a truck → send to add
     if (profileData.role === "owner") {
       const { data: truck, error: truckError } = await supabase
@@ -113,6 +116,7 @@ export default function AuthPage() {
     const cleanPassword = password.trim();
 
     // Basic validation
+    // Check if email and password are not empty
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
@@ -135,12 +139,14 @@ export default function AuthPage() {
     }
 
     // Create a blank profile with default role
+    // This is where you can set the default role for new users
+    // For example, you can set it to "user" or "guest"
     const userId = data.user.id;
     const { error: profileError } = await supabase
       .from("profiles")
       .upsert({
         id: userId,
-        role: "user",
+        role: "username",
       });
 
     if (profileError) {
@@ -244,6 +250,7 @@ export default function AuthPage() {
   );
 }
 
+// This is a simple login screen for a React Native app using Expo and Supabase.
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
